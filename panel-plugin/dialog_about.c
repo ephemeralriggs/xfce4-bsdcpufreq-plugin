@@ -36,10 +36,10 @@ void bsdcpufreq_about(XfcePanelPlugin *plugin, gpointer data)
 	GdkPixbuf *icon = xfce_panel_pixbuf_from_source("utilities-system-monitor", NULL, 32);
 	const gchar *authors[] = {"Thomas Zander <thomas.e.zander@googlemail.com>", NULL};
 	gtk_show_about_dialog(NULL, "logo", icon, "license", xfce_get_license_text (XFCE_LICENSE_TEXT_BSD),
-		"version", "0.1", "program-name", "xfce4-bsdcpufreq-plugin",
+		"version", "0.1.1", "program-name", "xfce4-bsdcpufreq-plugin",
 		"authors", authors,
 		"comments", _("Monitor CPU frequency scaling"),
-		"website", "http://github.com",
+		"website", "https://github.com/riggs-/xfce4-bsdcpufreq-plugin",
 		"copyright", _("Copyright (c) 2014"), NULL);
 
 	if(icon)
