@@ -1,3 +1,5 @@
+# Sample Makefile to show how the plugin is built
+# The FreeBSD ports can use this directly
 SRCS=bsdcpufreq.c freq_funcs_freebsd.c dialog_about.c dialog_properties.c
 PLUGINDIR=panel-plugin
 CDEPS=`pkg-config --cflags gtk+-2.0 libxfce4panel-1.0 libxfce4ui-1`
