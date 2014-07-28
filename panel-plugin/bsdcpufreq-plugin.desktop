@@ -1,0 +1,9 @@
+[Xfce Panel]
+Type=X-XFCE-PanelPlugin
+Encoding=UTF-8
+Name=CPU frequency monitor
+Comment=Monitor the CPU frequency
+Icon=utilities-system-monitor
+X-XFCE-Module=bsdcpufreq
+X-XFCE-Internal=false
+X-XFCE-Unique=false

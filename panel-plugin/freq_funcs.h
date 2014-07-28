@@ -1,4 +1,4 @@
-Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
+/* Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -21,4 +21,15 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
+#if !defined(__FREQ_FUNCS_H__)
+#define __FREQ_FUNCS_H__
+
+int get_int_sysctl_by_mib(const int *mib, size_t miblen, int *error);
+int get_mib_for_cpu_freq(int *mib, size_t miblen, int cpu, int *error);
+int get_max_cpufreq_level(int cpu);
+
+#endif // __FREQ_FUNCS_H__
+
+// vim:ts=8

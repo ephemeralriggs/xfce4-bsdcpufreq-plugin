@@ -1,4 +1,4 @@
-Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
+/*Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -21,4 +21,17 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
+#if !defined(__DIALOG_PROPERTIES_H__)
+#define __DIALOG_PROPERTIES_H__
+
+G_BEGIN_DECLS
+
+void bsdcpufreq_configure(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq);
+
+G_END_DECLS
+
+#endif //__DIALOG_PROPERTIES_H__
+
+// vim:ts=8
