@@ -11,7 +11,7 @@ all:
 .for f in $(SRCS)
 	$(CC) -Wall -c $(CFLAGS) $(CDEPS) $(PLUGINDIR)/$(f)
 .endfor
-	$(CC) -Wall $(CFLAGS) $(LDFLAGS) $(LDEPS) -shared -o libbsdcpufreq.so
+	$(CC) -Wall $(CFLAGS) $(LDFLAGS) $(LDEPS) *.o -shared -o libbsdcpufreq.so
 
 clean:
 	rm -f *.o libbsdcpufreq.so
