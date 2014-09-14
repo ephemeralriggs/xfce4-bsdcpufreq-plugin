@@ -40,6 +40,13 @@ static void observed_cpu_changed_cb(GtkSpinButton *spinbutton, gpointer data)
 	bsdcpufreq_init_cpu_data(bsdcpufreq);
 }
 
+static void status_color_changed_cb(GtkColorButton *colorbutton, gpointer data)
+{
+	BSDcpufreqPlugin *bsdcpufreq = (BSDcpufreqPlugin*)data;
+	gtk_color_button_get_color(colorbutton, &bsdcpufreq->status_color);
+	bsdcpufreq_set_status_color(bsdcpufreq);
+}
+
 static void bsdcpufreq_configure_response(GtkWidget *dialog, gint response, BSDcpufreqPlugin *bsdcpufreq)
 {
 	if (response != GTK_RESPONSE_HELP)
@@ -73,6 +80,7 @@ void bsdcpufreq_configure(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 	GtkWidget *frame = xfce_gtk_frame_box_new_with_content(_("General"), hbox);
 	gtk_box_pack_start_defaults(content, frame);
 
+	//Observed CPU setting
 	GtkWidget *label = gtk_label_new(_("Observed CPU:"));
 	gtk_box_pack_start_defaults(GTK_BOX(hbox), label);
 
@@ -82,6 +90,11 @@ void bsdcpufreq_configure(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinbutton), bsdcpufreq->observed_cpu);
 	g_signal_connect(G_OBJECT(spinbutton), "value-changed", G_CALLBACK(observed_cpu_changed_cb), bsdcpufreq);
+
+	//Color setting
+	GtkWidget *colorbutton = gtk_color_button_new_with_color(&bsdcpufreq->status_color);
+	gtk_box_pack_start_defaults(GTK_BOX(hbox), colorbutton);
+	g_signal_connect(G_OBJECT(colorbutton), "color-set", G_CALLBACK(status_color_changed_cb), bsdcpufreq);
 
 	gtk_widget_show_all(dialog);
 }

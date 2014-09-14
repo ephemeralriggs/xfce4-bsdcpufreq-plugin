@@ -38,6 +38,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TOOLTIP_STRING_FORMAT "CPU %d: %1.02f GHz"
 #define UPDATE_INTERVAL 500	//miliseconds
 
+const gchar *DEFAULT_GRAPH_COLOR = "#346ae9";
+
 static gint bsdcpufreq_update(BSDcpufreqPlugin *bsdcpufreq)
 {
 	if (bsdcpufreq->miblen == 0)
@@ -75,6 +77,13 @@ void bsdcpufreq_init_cpu_data(BSDcpufreqPlugin *bsdcpufreq)
 		bsdcpufreq->miblen = 0;
 }
 
+void bsdcpufreq_set_status_color(BSDcpufreqPlugin *bsdcpufreq)
+{
+	gtk_widget_modify_bg(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_PRELIGHT, &bsdcpufreq->status_color);
+	gtk_widget_modify_bg(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_SELECTED, &bsdcpufreq->status_color);
+	gtk_widget_modify_base(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_SELECTED, &bsdcpufreq->status_color);
+}
+
 void bsdcpufreq_save(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 {
 	XfceRc *rc;
@@ -93,6 +102,13 @@ void bsdcpufreq_save(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 	if (G_LIKELY(rc != NULL))
 	{
 		xfce_rc_write_int_entry(rc, "observed_cpu", bsdcpufreq->observed_cpu);
+
+		gchar graph_color[8];
+		g_snprintf(graph_color, 8, "#%02X%02X%02X", (guint)bsdcpufreq->status_color.red >> 8,
+							    (guint)bsdcpufreq->status_color.green >> 8,
+							    (guint)bsdcpufreq->status_color.blue >> 8);
+		xfce_rc_write_entry(rc, "graph_color", graph_color);
+
 		xfce_rc_close(rc);
 		DBG("Settings saved");
 	}
@@ -111,6 +127,10 @@ static void bsdcpufreq_read(BSDcpufreqPlugin *bsdcpufreq)
 		if (G_LIKELY(rc != NULL))
 		{
 			bsdcpufreq->observed_cpu = xfce_rc_read_int_entry(rc, "observed_cpu", DEFAULT_OBSERVED_CPU);
+
+			const gchar *graph_color = xfce_rc_read_entry(rc, "graph_color", DEFAULT_GRAPH_COLOR);
+			gdk_color_parse(graph_color, &bsdcpufreq->status_color);
+
 			xfce_rc_close(rc);
 			return;
 		}
@@ -119,6 +139,7 @@ static void bsdcpufreq_read(BSDcpufreqPlugin *bsdcpufreq)
 	DBG("Could not read settings, applying default settings");
 
 	bsdcpufreq->observed_cpu = DEFAULT_OBSERVED_CPU;
+	gdk_color_parse(DEFAULT_GRAPH_COLOR, &bsdcpufreq->status_color);
 }
 
 static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
@@ -142,6 +163,7 @@ static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
 
 	bsdcpufreq->status = GTK_WIDGET(gtk_progress_bar_new());
 	gtk_widget_set_tooltip_text(GTK_WIDGET(bsdcpufreq->status),(_(TOOLTIP_STRING_EMPTY)));
+	bsdcpufreq_set_status_color(bsdcpufreq);
 	gtk_widget_show(bsdcpufreq->status);
 	gtk_box_pack_start(GTK_BOX(bsdcpufreq->hvbox), bsdcpufreq->status, FALSE, FALSE, 0);
 

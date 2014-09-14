@@ -36,8 +36,9 @@ typedef struct
 
 	GtkWidget *ebox;
 	GtkWidget *hvbox;
-	//GtkWidget *label;	//tooltip
 	GtkWidget *status;	//progress bar indicating the status
+
+	GdkColor status_color;	//selected color for the progress bar
 
 	guint update_timeout;
 
@@ -48,6 +49,7 @@ typedef struct
 } BSDcpufreqPlugin;
 
 void bsdcpufreq_init_cpu_data(BSDcpufreqPlugin *bsdcpufreq);
+void bsdcpufreq_set_status_color(BSDcpufreqPlugin *bsdcpufreq);
 void bsdcpufreq_save(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq);
 
 G_END_DECLS
