@@ -2,7 +2,7 @@
 Type=X-XFCE-PanelPlugin
 Encoding=UTF-8
 Name=CPU frequency monitor
-Comment=Monitor the CPU frequency
+Comment=Display the current CPU frequency scaling
 Icon=utilities-system-monitor
 X-XFCE-Module=bsdcpufreq
 X-XFCE-Internal=false

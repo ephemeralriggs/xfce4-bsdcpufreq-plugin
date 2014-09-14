@@ -151,7 +151,7 @@ static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
 static void bsdcpufreq_free(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 {
 	GtkWidget *dialog;
-	/* check if the dialog is still open. if so, destroy it */
+	//Check if the dialog is still open. If so, destroy it
 	dialog = g_object_get_data(G_OBJECT(plugin), "dialog");
 	if (G_UNLIKELY(dialog != NULL))
 		gtk_widget_destroy(dialog);
@@ -159,6 +159,23 @@ static void bsdcpufreq_free(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufre
 	gtk_widget_destroy(bsdcpufreq->hvbox);
 
 	panel_slice_free(BSDcpufreqPlugin, bsdcpufreq);
+}
+
+static void bsdcpufreq_set_size(XfcePanelPlugin *plugin, gint size, BSDcpufreqPlugin *bsdcpufreq)
+{
+	//Constants are based on empirical values found in other plugin code and some guesswork
+	const gint threshold_size = 26;
+	const gint widget_min_size = 12;
+
+	GtkOrientation orientation;
+	orientation = xfce_panel_plugin_get_orientation(plugin);
+
+	gtk_container_set_border_width(GTK_CONTAINER(bsdcpufreq->ebox), (size > threshold_size ? 2 : 1));
+
+	if (orientation == GTK_ORIENTATION_VERTICAL)
+		gtk_widget_set_size_request(GTK_WIDGET(bsdcpufreq->status), -1, widget_min_size);
+	else
+		gtk_widget_set_size_request(GTK_WIDGET(bsdcpufreq->status), widget_min_size, -1);
 }
 
 static void bsdcpufreq_orientation_changed(XfcePanelPlugin *plugin, GtkOrientation orientation, BSDcpufreqPlugin *bsdcpufreq)
@@ -172,18 +189,13 @@ static void bsdcpufreq_orientation_changed(XfcePanelPlugin *plugin, GtkOrientati
 	{
 		gtk_progress_bar_set_orientation(GTK_PROGRESS_BAR(bsdcpufreq->status), GTK_PROGRESS_LEFT_TO_RIGHT);
 	}
+
+	bsdcpufreq_set_size(plugin, xfce_panel_plugin_get_size(plugin), bsdcpufreq);
 }
 
 static gboolean bsdcpufreq_size_changed(XfcePanelPlugin *plugin, gint size, BSDcpufreqPlugin *bsdcpufreq)
 {
-	GtkOrientation orientation;
-	orientation = xfce_panel_plugin_get_orientation(plugin);
-
-	if (orientation == GTK_ORIENTATION_HORIZONTAL)
-		gtk_widget_set_size_request(GTK_WIDGET(plugin), -1, size);
-	else
-		gtk_widget_set_size_request(GTK_WIDGET(plugin), size, -1);
-
+	bsdcpufreq_set_size(plugin, size, bsdcpufreq);
 	return TRUE;
 }
 
