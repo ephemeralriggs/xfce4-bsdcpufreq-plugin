@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
+/* Copyright (c) 2014-2019, Thomas Zander <thomas.e.zander@googlemail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <gtk/gtk.h>
 #include <libxfce4util/libxfce4util.h>
 #include <libxfce4panel/xfce-panel-plugin.h>
-#include <libxfce4panel/xfce-hvbox.h>
 
 #include "freq_funcs.h"
 #include "bsdcpufreq.h"
@@ -37,6 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TOOLTIP_STRING_EMPTY "CPU -: -.-- GHz"
 #define TOOLTIP_STRING_FORMAT "CPU %d: %1.02f GHz"
 #define UPDATE_INTERVAL 500	//miliseconds
+
+#define CSS_DATA "\
+		progressbar.horizontal trough { min-height: 8px; }\
+		progressbar.horizontal progress { min-height: 8px; }\
+		progressbar.vertical trough { min-width: 8px; }\
+		progressbar.vertical progress { min-width: 8px; }\
+		progressbar progress { background-color: %s; background-image: none; }"
 
 const gchar *DEFAULT_GRAPH_COLOR = "#346ae9";
 
@@ -79,9 +85,14 @@ void bsdcpufreq_init_cpu_data(BSDcpufreqPlugin *bsdcpufreq)
 
 void bsdcpufreq_set_status_color(BSDcpufreqPlugin *bsdcpufreq)
 {
-	gtk_widget_modify_bg(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_PRELIGHT, &bsdcpufreq->status_color);
-	gtk_widget_modify_bg(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_SELECTED, &bsdcpufreq->status_color);
-	gtk_widget_modify_base(GTK_WIDGET(bsdcpufreq->status), GTK_STATE_SELECTED, &bsdcpufreq->status_color);
+#if !GTK_CHECK_VERSION (3, 20, 0)
+#error "This panel plugin requires gtk+ >= 3.20"
+#endif
+	gchar *color = gdk_rgba_to_string(&bsdcpufreq->status_color);
+	gchar *css = g_strdup_printf(CSS_DATA, color);
+	gtk_css_provider_load_from_data(g_object_get_data(G_OBJECT(bsdcpufreq->status), "css_provider"), css, strlen(css), NULL);
+	g_free(color);
+	g_free(css);
 }
 
 void bsdcpufreq_save(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
@@ -103,11 +114,9 @@ void bsdcpufreq_save(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 	{
 		xfce_rc_write_int_entry(rc, "observed_cpu", bsdcpufreq->observed_cpu);
 
-		gchar graph_color[8];
-		g_snprintf(graph_color, 8, "#%02X%02X%02X", (guint)bsdcpufreq->status_color.red >> 8,
-							    (guint)bsdcpufreq->status_color.green >> 8,
-							    (guint)bsdcpufreq->status_color.blue >> 8);
+		gchar *graph_color = gdk_rgba_to_string(&bsdcpufreq->status_color);
 		xfce_rc_write_entry(rc, "graph_color", graph_color);
+		g_free(graph_color);
 
 		xfce_rc_close(rc);
 		DBG("Settings saved");
@@ -129,7 +138,7 @@ static void bsdcpufreq_read(BSDcpufreqPlugin *bsdcpufreq)
 			bsdcpufreq->observed_cpu = xfce_rc_read_int_entry(rc, "observed_cpu", DEFAULT_OBSERVED_CPU);
 
 			const gchar *graph_color = xfce_rc_read_entry(rc, "graph_color", DEFAULT_GRAPH_COLOR);
-			gdk_color_parse(graph_color, &bsdcpufreq->status_color);
+			gdk_rgba_parse(&bsdcpufreq->status_color, graph_color);
 
 			xfce_rc_close(rc);
 			return;
@@ -139,7 +148,7 @@ static void bsdcpufreq_read(BSDcpufreqPlugin *bsdcpufreq)
 	DBG("Could not read settings, applying default settings");
 
 	bsdcpufreq->observed_cpu = DEFAULT_OBSERVED_CPU;
-	gdk_color_parse(DEFAULT_GRAPH_COLOR, &bsdcpufreq->status_color);
+	gdk_rgba_parse(&bsdcpufreq->status_color, DEFAULT_GRAPH_COLOR);
 }
 
 static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
@@ -147,7 +156,7 @@ static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
 	BSDcpufreqPlugin *bsdcpufreq;
 	GtkOrientation orientation;
 
-	bsdcpufreq = panel_slice_new0(BSDcpufreqPlugin);
+	bsdcpufreq = g_slice_new0(BSDcpufreqPlugin);
 	bsdcpufreq->plugin = plugin;
 	bsdcpufreq_read(bsdcpufreq);
 	orientation = xfce_panel_plugin_get_orientation(plugin);
@@ -155,7 +164,7 @@ static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
 	bsdcpufreq->ebox = gtk_event_box_new();
 	gtk_widget_show(bsdcpufreq->ebox);
 
-	bsdcpufreq->hvbox = xfce_hvbox_new(orientation, FALSE, 2);
+	bsdcpufreq->hvbox = gtk_box_new(orientation, 2);
 	gtk_widget_show(bsdcpufreq->hvbox);
 	gtk_container_add(GTK_CONTAINER(bsdcpufreq->ebox), bsdcpufreq->hvbox);
 	// Ensure mouse events are passed to the event handlers
@@ -163,9 +172,15 @@ static BSDcpufreqPlugin *bsdcpufreq_new(XfcePanelPlugin *plugin)
 
 	bsdcpufreq->status = GTK_WIDGET(gtk_progress_bar_new());
 	gtk_widget_set_tooltip_text(GTK_WIDGET(bsdcpufreq->status),(_(TOOLTIP_STRING_EMPTY)));
-	bsdcpufreq_set_status_color(bsdcpufreq);
 	gtk_widget_show(bsdcpufreq->status);
 	gtk_box_pack_start(GTK_BOX(bsdcpufreq->hvbox), bsdcpufreq->status, FALSE, FALSE, 0);
+
+	GtkCssProvider *css_provider = gtk_css_provider_new();
+	gtk_style_context_add_provider(
+		GTK_STYLE_CONTEXT(gtk_widget_get_style_context(GTK_WIDGET(bsdcpufreq->status))),
+		GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_set_data(G_OBJECT(bsdcpufreq->status), "css_provider", css_provider);
+	bsdcpufreq_set_status_color(bsdcpufreq);
 
 	return bsdcpufreq;
 }
@@ -180,45 +195,32 @@ static void bsdcpufreq_free(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufre
 
 	gtk_widget_destroy(bsdcpufreq->hvbox);
 
-	panel_slice_free(BSDcpufreqPlugin, bsdcpufreq);
-}
-
-static void bsdcpufreq_set_size(XfcePanelPlugin *plugin, gint size, BSDcpufreqPlugin *bsdcpufreq)
-{
-	//Constants are based on empirical values found in other plugin code and some guesswork
-	const gint threshold_size = 26;
-	const gint widget_min_size = 12;
-
-	GtkOrientation orientation;
-	orientation = xfce_panel_plugin_get_orientation(plugin);
-
-	gtk_container_set_border_width(GTK_CONTAINER(bsdcpufreq->ebox), (size > threshold_size ? 2 : 1));
-
-	if (orientation == GTK_ORIENTATION_VERTICAL)
-		gtk_widget_set_size_request(GTK_WIDGET(bsdcpufreq->status), -1, widget_min_size);
-	else
-		gtk_widget_set_size_request(GTK_WIDGET(bsdcpufreq->status), widget_min_size, -1);
-}
-
-static void bsdcpufreq_orientation_changed(XfcePanelPlugin *plugin, GtkOrientation orientation, BSDcpufreqPlugin *bsdcpufreq)
-{
-	xfce_hvbox_set_orientation(XFCE_HVBOX(bsdcpufreq->hvbox), orientation);
-	if (orientation == GTK_ORIENTATION_HORIZONTAL)
-	{
-		gtk_progress_bar_set_orientation(GTK_PROGRESS_BAR(bsdcpufreq->status), GTK_PROGRESS_BOTTOM_TO_TOP);
-	}
-	else
-	{
-		gtk_progress_bar_set_orientation(GTK_PROGRESS_BAR(bsdcpufreq->status), GTK_PROGRESS_LEFT_TO_RIGHT);
-	}
-
-	bsdcpufreq_set_size(plugin, xfce_panel_plugin_get_size(plugin), bsdcpufreq);
+	g_slice_free(BSDcpufreqPlugin, bsdcpufreq);
 }
 
 static gboolean bsdcpufreq_size_changed(XfcePanelPlugin *plugin, gint size, BSDcpufreqPlugin *bsdcpufreq)
 {
-	bsdcpufreq_set_size(plugin, size, bsdcpufreq);
+	//Constants are based on empirical values found in other plugin code and some guesswork
+	const gint threshold_size = 26;
+	gtk_container_set_border_width(GTK_CONTAINER(bsdcpufreq->ebox), (size > threshold_size ? 2 : 1));
 	return TRUE;
+}
+
+static void bsdcpufreq_orientation_changed(XfcePanelPlugin *plugin, GtkOrientation orientation, BSDcpufreqPlugin *bsdcpufreq)
+{
+	gtk_orientable_set_orientation(GTK_ORIENTABLE(bsdcpufreq->hvbox), orientation);
+	if (orientation == GTK_ORIENTATION_HORIZONTAL)
+	{
+		gtk_orientable_set_orientation(GTK_ORIENTABLE(bsdcpufreq->status), GTK_ORIENTATION_VERTICAL);
+		gtk_progress_bar_set_inverted(GTK_PROGRESS_BAR(bsdcpufreq->status), TRUE);
+	}
+	else
+	{
+		gtk_orientable_set_orientation(GTK_ORIENTABLE(bsdcpufreq->status), GTK_ORIENTATION_HORIZONTAL);
+		gtk_progress_bar_set_inverted(GTK_PROGRESS_BAR(bsdcpufreq->status), FALSE);
+	}
+
+	bsdcpufreq_size_changed(plugin, xfce_panel_plugin_get_size(plugin), bsdcpufreq);
 }
 
 static void bsdcpufreq_construct(XfcePanelPlugin *plugin)

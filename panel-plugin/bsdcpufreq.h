@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
+/* Copyright (c) 2014-2019, Thomas Zander <thomas.e.zander@googlemail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ typedef struct
 	GtkWidget *hvbox;
 	GtkWidget *status;	//progress bar indicating the status
 
-	GdkColor status_color;	//selected color for the progress bar
+	GdkRGBA status_color;	//selected color for the progress bar
 
 	guint update_timeout;
 

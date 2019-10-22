@@ -7,3 +7,4 @@ Icon=utilities-system-monitor
 X-XFCE-Module=bsdcpufreq
 X-XFCE-Internal=false
 X-XFCE-Unique=false
+X-XFCE-API=2.0

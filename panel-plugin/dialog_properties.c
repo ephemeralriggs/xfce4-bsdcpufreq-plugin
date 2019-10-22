@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, Thomas Zander <thomas.e.zander@googlemail.com>
+/* Copyright (c) 2014-2019, Thomas Zander <thomas.e.zander@googlemail.com>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ static void observed_cpu_changed_cb(GtkSpinButton *spinbutton, gpointer data)
 static void status_color_changed_cb(GtkColorButton *colorbutton, gpointer data)
 {
 	BSDcpufreqPlugin *bsdcpufreq = (BSDcpufreqPlugin*)data;
-	gtk_color_button_get_color(colorbutton, &bsdcpufreq->status_color);
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(colorbutton), &bsdcpufreq->status_color);
 	bsdcpufreq_set_status_color(bsdcpufreq);
 }
 
@@ -65,10 +65,9 @@ void bsdcpufreq_configure(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 
 	GtkWidget *dialog = xfce_titled_dialog_new_with_buttons(_("CPU frequency monitor"),
 			GTK_WINDOW (gtk_widget_get_toplevel(GTK_WIDGET(plugin))),
-			GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_NO_SEPARATOR,
-			GTK_STOCK_CLOSE, GTK_RESPONSE_OK,
+			GTK_DIALOG_DESTROY_WITH_PARENT,
+			"gtk-close", GTK_RESPONSE_OK,
 			NULL);
-
 	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_icon_name(GTK_WINDOW(dialog), "xfce4-settings");
 
@@ -76,24 +75,30 @@ void bsdcpufreq_configure(XfcePanelPlugin *plugin, BSDcpufreqPlugin *bsdcpufreq)
 	g_signal_connect(G_OBJECT(dialog), "response", G_CALLBACK(bsdcpufreq_configure_response), bsdcpufreq);
 
 	GtkBox *content = GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog)));
-	GtkWidget *hbox = gtk_hbox_new(FALSE, 2);
-	GtkWidget *frame = xfce_gtk_frame_box_new_with_content(_("General"), hbox);
-	gtk_box_pack_start_defaults(content, frame);
 
-	//Observed CPU setting
-	GtkWidget *label = gtk_label_new(_("Observed CPU:"));
-	gtk_box_pack_start_defaults(GTK_BOX(hbox), label);
+	GtkWidget *grid = gtk_grid_new();
+	gtk_grid_set_column_spacing(GTK_GRID(grid), 12);
+	gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+	gtk_container_set_border_width(GTK_CONTAINER(grid), 12);
+	gtk_box_pack_start(content, grid, TRUE, TRUE, 0);
 
+	GtkWidget *label = gtk_label_new (NULL);
+	gtk_label_set_markup(GTK_LABEL (label), _("<b>General</b>"));
+	gtk_widget_set_halign(label, GTK_ALIGN_START);
+	gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+	gtk_grid_attach(GTK_GRID(grid), label, 0, 0, 1, 1);
+
+	//Observed CPU setting and associated color
+	label = gtk_label_new(_("Observed CPU:"));
+	gtk_grid_attach(GTK_GRID(grid), label, 0, 1, 1, 1);
 	GtkWidget *spinbutton = gtk_spin_button_new_with_range(0,99,1);
 	gtk_spin_button_set_digits(GTK_SPIN_BUTTON(spinbutton), 0);
-	gtk_box_pack_start_defaults(GTK_BOX(hbox), spinbutton);
-
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinbutton), bsdcpufreq->observed_cpu);
+	gtk_widget_set_halign(spinbutton, GTK_ALIGN_START);
 	g_signal_connect(G_OBJECT(spinbutton), "value-changed", G_CALLBACK(observed_cpu_changed_cb), bsdcpufreq);
-
-	//Color setting
-	GtkWidget *colorbutton = gtk_color_button_new_with_color(&bsdcpufreq->status_color);
-	gtk_box_pack_start_defaults(GTK_BOX(hbox), colorbutton);
+	gtk_grid_attach(GTK_GRID(grid), spinbutton, 1, 1, 1, 1);
+	GtkWidget *colorbutton = gtk_color_button_new_with_rgba(&bsdcpufreq->status_color);
+	gtk_grid_attach(GTK_GRID(grid), colorbutton, 2, 1, 1, 1);
 	g_signal_connect(G_OBJECT(colorbutton), "color-set", G_CALLBACK(status_color_changed_cb), bsdcpufreq);
 
 	gtk_widget_show_all(dialog);
